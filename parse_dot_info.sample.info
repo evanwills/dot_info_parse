@@ -1,0 +1,24 @@
+split_sample = false
+split_delim = "\n"
+regex_delim : `
+
+sample_len:300;
+matched_len:200;
+
+action:test;
+
+regexes[0][find] = '[abc]+;'
+regexes[0][replace] = "begining";
+regexes[0][modifiers] = i;
+
+regexes[1][find] = \"[wxy]+;
+regexes[1][replace] = end;
+regexes[1][modifiers][] = i;
+regexes[1][modifiers][] = s;
+regexes[1][modifiers][] = x;
+
+ws_trim: false;
+ws_action: false;
+
+test_float: 1.5;
+zero_test = '0001';
