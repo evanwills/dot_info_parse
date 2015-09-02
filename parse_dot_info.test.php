@@ -54,11 +54,9 @@ ws_action:false;';
 		
 		$sample = array(
 			dot_info::MATCH_CASE , 'match_case' , 'match case' , 'matchcase',
-			dot_info::IGNORE_CASE , 'ignore_case' , 'ignore case' , 'ignorecase',
 			dot_info::STORE_ERRORS , 'store_errors' , 'store errors' , 'storeerrors',
-			dot_info::THROW_ERRORS , 'throw_errors' , 'throw errors' , 'throwerrors',
-			dot_info::READ_ONLY , 'read_only' , 'read only' , 'readonly',
-			dot_info::ADD_NEW_ONLY , 'add_new_only' , 'add new only' , 'addnewonly'
+			dot_info::READ_INSERT , 'read_insert' , 'read write' , 'readwrite',
+			dot_info::READ_INSERT_UPDATE , 'read_insert_update' , 'read write update' , 'readwriteupdate'
 		);
 
 		for( $a = 0 ; $a < 2 ; $a += 1 ) {
@@ -376,7 +374,7 @@ ws_action:false;';
 
 
 	public function testAddInfoAddNewOnlyNewPorperty() {
-		$info = new dot_info($this->sample_file,dot_info::ADD_NEW_ONLY);
+		$info = new dot_info($this->sample_file,dot_info::READ_INSERT);
 
 		$this->assertEquals(true,$info->add_info('this one is added','add_new'));
 		$this->assertEquals(true,$info->info_exists('add_new'));
@@ -384,7 +382,7 @@ ws_action:false;';
 	}
 	
 	public function testAddInfoAddNewOnlyExtraIncrementalKey() {
-		$info = new dot_info($this->sample_file,dot_info::ADD_NEW_ONLY);
+		$info = new dot_info($this->sample_file,dot_info::READ_INSERT);
 
 		$this->assertEquals(true,$info->add_info('^found it$','regexes','[]','find'));
 		$this->assertEquals(true,$info->info_exists('regexes',2,'find'));
@@ -392,7 +390,7 @@ ws_action:false;';
 	}
 
 	public function testAddInfoAddNewOnlyExtraIncrementalKeyMatchCase() {
-		$info = new dot_info($this->sample_file,dot_info::ADD_NEW_ONLY,dot_info::MATCH_CASE);
+		$info = new dot_info($this->sample_file,dot_info::READ_INSERT,dot_info::MATCH_CASE);
 		$this->assertEquals(true,$info->add_info('^completely different branch$','Regexes','[]','find'));
 		$this->assertEquals(true,$info->info_exists('Regexes',0,'find'));
 		$this->assertEquals(true,( $info->get_info('Regexes',0,'find') !== $info->get_info('regexes',0,'find') ) );
@@ -400,7 +398,7 @@ ws_action:false;';
 	}
 	
 	public function testAddInfoAddNewOnlyExtraPresetKey() {
-		$info = new dot_info($this->sample_file,dot_info::ADD_NEW_ONLY);
+		$info = new dot_info($this->sample_file,dot_info::READ_INSERT);
 
 		$this->assertEquals(true,$info->add_info('random stuff','regexes','1','what-tha'));
 		$this->assertEquals(true,$info->info_exists('regexes','1','what-tha'));
@@ -408,7 +406,7 @@ ws_action:false;';
 	}
 	
 	public function testAddInfoAddNewOnlyExtraDeepPresetKey1() {
-		$info = new dot_info($this->sample_file,dot_info::ADD_NEW_ONLY);
+		$info = new dot_info($this->sample_file,dot_info::READ_INSERT);
 
 		$this->assertEquals(true,$info->add_info('0015','new_prop','new_prop_key_1','new_prop_key_2','new_prop_key_3','new_prop_key_4','new_prop_key_6'));
 		$this->assertEquals(true,$info->info_exists('new_prop','new_prop_key_1','new_prop_key_2','new_prop_key_3','new_prop_key_4','new_prop_key_6'));
@@ -416,7 +414,7 @@ ws_action:false;';
 	}
 	
 	public function testAddInfoAddNewOnlyExtraDeepPresetKey2() {
-		$info = new dot_info($this->sample_file,dot_info::ADD_NEW_ONLY);
+		$info = new dot_info($this->sample_file,dot_info::READ_INSERT);
 
 		$this->assertEquals(true,$info->add_info('very deep','new_prop','new_prop_key_1','new_prop_key_2','new_prop_key_3','new_prop_key_4','new_prop_key_5'));
 		$this->assertEquals(true,$info->info_exists('new_prop','new_prop_key_1','new_prop_key_2','new_prop_key_3','new_prop_key_4','new_prop_key_5'));
@@ -424,7 +422,7 @@ ws_action:false;';
 	}
 	
 	public function testAddInfoAddNewOnlyUpdateExtradDeepPresetKey2() {
-		$info = new dot_info($this->sample_file,dot_info::ADD_NEW_ONLY);
+		$info = new dot_info($this->sample_file,dot_info::READ_INSERT);
 
 		$this->assertEquals(true,$info->add_info('very deep','new_prop','new_prop_key_1','new_prop_key_2','new_prop_key_3','new_prop_key_4','new_prop_key_5'));
 		$this->assertEquals(true,$info->info_exists('new_prop','new_prop_key_1','new_prop_key_2','new_prop_key_3','new_prop_key_4','new_prop_key_5'));
@@ -436,7 +434,7 @@ ws_action:false;';
 	}
 	
 	public function testAddInfoAddNewOnlyNewFloatProperty() {
-		$info = new dot_info($this->sample_file,dot_info::ADD_NEW_ONLY);
+		$info = new dot_info($this->sample_file,dot_info::READ_INSERT);
 
 		$this->assertEquals(true,$info->add_info('3.141592654','test_pie'));
 		$this->assertEquals(true,$info->info_exists('test_pie'));
@@ -444,7 +442,7 @@ ws_action:false;';
 	}
 	
 	public function testAddInfoAddNewOnlyUpdateExistingProperty() {
-		$info = new dot_info($this->sample_file,dot_info::ADD_NEW_ONLY);
+		$info = new dot_info($this->sample_file,dot_info::READ_INSERT);
 
 		$this->assertEquals(false,$info->add_info('this one is NOT added','test_float'));
 		$this->assertEquals(true,$info->info_exists('test_float'));
@@ -453,7 +451,7 @@ ws_action:false;';
 
 	
 	public function testAddInfoAddNewOnlyUpdateExistingRegexIndex() {
-		$info = new dot_info($this->sample_file,dot_info::ADD_NEW_ONLY);
+		$info = new dot_info($this->sample_file,dot_info::READ_INSERT);
 
 		$this->assertEquals(false,$info->add_info('^regex$','regexes',0,'find'));
 		$this->assertEquals(true,$info->info_exists('regexes',0,'find'));
@@ -468,32 +466,32 @@ ws_action:false;';
 
 
 
-	public function testAddInfoOverwriteNewPorperty() {
-		$info = new dot_info($this->sample_file,dot_info::OVERWRITE);
+	public function testAddInfoReadWriteUpdateNewPorperty() {
+		$info = new dot_info($this->sample_file,dot_info::READ_INSERT_UPDATE);
 
 		$this->assertEquals(true,$info->add_info('this one is added','add_new'));
 		$this->assertEquals(true,$info->info_exists('add_new'));
 		$this->assertEquals('this one is added',$info->get_info('add_new'));
 	}
 
-	public function testAddInfoOverwriteExtraIncrementalKey() {
-		$info = new dot_info($this->sample_file,dot_info::OVERWRITE);
+	public function testAddInfoReadWriteUpdateExtraIncrementalKey() {
+		$info = new dot_info($this->sample_file,dot_info::READ_INSERT_UPDATE);
 
 		$this->assertEquals(true,$info->add_info('^found it$','regexes','[]','find'));
 		$this->assertEquals(true,$info->info_exists('regexes',2,'find'));
 		$this->assertEquals('^found it$',$info->get_info('regexes',2,'find'));
 	}
 
-	public function testAddInfoOverwriteExtraPresetKey() {
-		$info = new dot_info($this->sample_file,dot_info::OVERWRITE);
+	public function testAddInfoReadWriteUpdateExtraPresetKey() {
+		$info = new dot_info($this->sample_file,dot_info::READ_INSERT_UPDATE);
 
 		$this->assertEquals(true,$info->add_info('random stuff','regexes','1','what-tha'));
 		$this->assertEquals(true,$info->info_exists('regexes','1','what-tha'));
 		$this->assertEquals('random stuff',$info->get_info('regexes','1','what-tha'));
 	}
 
-	public function testAddInfoOverwriteExtraDeepPresetKey1() {
-		$info = new dot_info($this->sample_file,dot_info::OVERWRITE);
+	public function testAddInfoReadWriteUpdateExtraDeepPresetKey1() {
+		$info = new dot_info($this->sample_file,dot_info::READ_INSERT_UPDATE);
 
 
 		$this->assertEquals(true,$info->add_info('very deep','new_prop','new_prop_key_1','new_prop_key_2','new_prop_key_3','new_prop_key_4','new_prop_key_5'));
@@ -501,8 +499,8 @@ ws_action:false;';
 		$this->assertEquals('very deep',$info->get_info('new_prop','new_prop_key_1','new_prop_key_2','new_prop_key_3','new_prop_key_4','new_prop_key_5'));
 	}
 
-	public function testAddInfoOverwriteUpdateExtradDeepPresetKey1() {
-		$info = new dot_info($this->sample_file,dot_info::OVERWRITE);
+	public function testAddInfoReadWriteUpdateUpdateExtradDeepPresetKey1() {
+		$info = new dot_info($this->sample_file,dot_info::READ_INSERT_UPDATE);
 
 		$this->assertEquals(true,$info->add_info('very deep','new_prop','new_prop_key_1','new_prop_key_2','new_prop_key_3','new_prop_key_4','new_prop_key_5'));
 		$this->assertEquals(true,$info->info_exists('new_prop','new_prop_key_1','new_prop_key_2','new_prop_key_3','new_prop_key_4','new_prop_key_5'));
@@ -513,16 +511,16 @@ ws_action:false;';
 		$this->assertEquals('0015',$info->get_info('new_prop','new_prop_key_1','new_prop_key_2','new_prop_key_3','new_prop_key_4','new_prop_key_5'));
 	}
 
-	public function testAddInfoOverwriteNewFloatProperty() {
-		$info = new dot_info($this->sample_file,dot_info::OVERWRITE);
+	public function testAddInfoReadWriteUpdateNewFloatProperty() {
+		$info = new dot_info($this->sample_file,dot_info::READ_INSERT_UPDATE);
 
 		$this->assertEquals(true,$info->add_info('3.141592654','test_pie'));
 		$this->assertEquals(true,$info->info_exists('test_pie'));
 		$this->assertEquals(3.141592654,$info->get_info('test_pie'));
 	}
 
-	public function testAddInfoOverwriteUpdateExistingProperty() {
-		$info = new dot_info($this->sample_file,dot_info::OVERWRITE);
+	public function testAddInfoReadWriteUpdateUpdateExistingProperty() {
+		$info = new dot_info($this->sample_file,dot_info::READ_INSERT_UPDATE);
 		$tmp = $info->get_info('test_float');
 		$this->assertEquals(true,$info->add_info('this one overwrote the old one ('.$tmp.')','test_float'));
 		$this->assertEquals(true,$info->info_exists('test_float'));
@@ -530,8 +528,8 @@ ws_action:false;';
 	}
 
 	
-	public function testAddInfoOverwriteUpdateExistingRegexIndex() {
-		$info = new dot_info($this->sample_file,dot_info::OVERWRITE);
+	public function testAddInfoReadWriteUpdateUpdateExistingRegexIndex() {
+		$info = new dot_info($this->sample_file,dot_info::READ_INSERT_UPDATE);
 		$this->assertEquals(true,$info->add_info('^regex$','regexes',0,'find'));
 		$this->assertEquals(true,$info->info_exists('regexes',0,'find'));
 		$this->assertEquals('^regex$',$info->get_info('regexes',0,'find'));
