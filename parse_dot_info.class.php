@@ -35,44 +35,31 @@ class dot_info
 	protected $merge_func = 'EDI__array_merge_new_only';
 	
 	const MATCH_CASE = 'match_case';
-	const IGNORE_CASE = 'ignore_case';
-	const STORE_ERROR = 'store_errors';
 	const STORE_ERRORS = 'store_errors';
-	const THROW_ERROR = 'throw_errors';
-	const THROW_ERRORS = 'throw_errors';
-	const READ_ONLY = 'readonly';
-	const ADD_NEW_ONLY = 'add_new_only';
-	const OVERWRITE = 'overwrite';
+	const READ_INSERT = 'read_insert';
+	const READ_INSERT_UPDATE = 'read_insert_update';
 
 
 	/**
-	 * @param  string   $info_content  contents of or path to a *.info
-	 *					file.
-	 * @param  boolean  [$case_sensitive = dot_info::IGNORE_CASE]
-	 *					whether or not the care about case of
-	 *					properties/keys when calling
-	 *					dot_info::info_exists() and
-	 *					dot_info::get_info()
-	 *					dot_info::IGNORE_CASE ignore case of string keys
-	 *					dot_info::MATCH_CASE care about case of
-	 *						string keys
-	 * @param  boolean  [$dont_throw_on_error = dot_info::THROW_ERRORS]
-	 *					whether or not to throw an exception if
-	 *					there's an error
-	 *					dot_info::THROW_ERRORS when encountering
-	 *						errors throw an exception
-	 *					dot_info::STORE_ERRORS when encountering
-	 *						errors save it to dot_info::$last_error
-	 *						for later retreival by dot_info::get_last_error()
-	 * @param  string   [$read_write = dot_info::READ_ONLY] read/write
-	 *					status of object.
-	 *					dot_info::READ_ONLY only read items.
-	 *						CANNOT write/overwrite new values
-	 *					dot_info::ADD_NEW_ONLY only new items can be
-	 *						added. Existing items can NOT be over-written
-	 *					dot_info::OVERWRITE new items can be added
-	 *						and possilby over-writing the existing
-	 *						value of a key/value pair
+	 * @param string $info_content The contents of, or path to a
+	 *		  .info file.
+	 * [@param dot_info::MATCH_CASE make value keys case sensitive
+	 *  [@param dot_info::STORE_ERRORS when dot_info encounters an error
+	 *			store the error message in the dot_info::$last_error
+	 *			property for later retreival by dot_info::get_last_error()
+	 *   [@param dot_info::READ_INSERT || dot_info::READ_INSERT_UPDATE
+	 *			dot_info::READ_INSERT allows the user to add new
+	 *				key/value pairs to the object, but does not allow
+	 *				for existing key/value pairs to be overwritten
+	 *			dot_info::READ_INSERT_UPDATE allows the user to add
+	 *				new key/value pairs and update/overwrite existing
+	 *				ones.
+	 * ]]]
+	 *
+	 * NOTE: options can be passed in any order. But if you're relying
+	 *		 on dot_info::STORE_ERRORS functionality during
+	 *		 instantiation, it needs to be the first option passed
+	 *
 	 * @return dot_info object
 	 */
 	public function __construct( $info_content ) {
@@ -84,7 +71,7 @@ class dot_info
 		$num_args = func_num_args();
 		if( $num_args > 1 ) {
 			$sep = '';
-			$final = "\n\tvalid dot_info constants:\n\t\tdot_info::MATCH_CASE,\n\t\tdot_info::STORE_ERRORS,\n\t\tdot_info::ADD_NEW_ONLY,\n\t\tdot_info::OVERWRITE";
+			$final = "\n\tvalid dot_info constants:\n\t\tdot_info::MATCH_CASE,\n\t\tdot_info::STORE_ERRORS,\n\t\tdot_info::READ_INSERT,\n\t\tdot_info::READ_INSERT_UPDATE";
 			for( $a = 1 ; $a < $num_args ; $a += 1 )
 			{
 				$prefix = "dot_info::__construct() expects option $a to be the value of a dot_info constant. ";
@@ -113,10 +100,10 @@ class dot_info
 					case 'matchcase':
 						$this->case_func = 'case_sensitive';
 						break;
-					case 'overwrite':
+					case 'readinsertupdate':
 						$this->merge_func = 'EDI__array_merge';
 						// deliberately not breaking here because we need to set dot_info::$merge_func
-					case 'addnewonly':
+					case 'readinsert':
 						$this->add_func = 'add_new';
 						$this->sort_added_func = 'sort_or_report';
 						break;
@@ -254,11 +241,12 @@ class dot_info
 `isx';
 		if( preg_match_all( $info_regex , $info_content , $key_value , PREG_SET_ORDER) ) {
 			for( $a = 0 ; $a < count($key_value) ; $a += 1 ) {
-				$key0 = $this->{$this->case_func}($this->auto_settype($key_value[$a][1]));
+				$key0 = $this->auto_settype($key_value[$a][1],true);
 				$value = $this->auto_settype($key_value[$a][7]);
 
 				for( $b = 6 ; $b > 1 ; $b -= 1 ) {
-					$key = $this->{$this->case_func}($key_value[$a][$b]);
+					$key = $this->auto_settype($key_value[$a][$b],true);
+					// no need to validate type because key must be a string.
 					if( $key === '' ) {
 						continue;
 					} elseif( $key === '[]' ) {
@@ -290,44 +278,6 @@ class dot_info
 
 
 	/**
-	 * @function get_info() returns either everything stored in
-	 *			 dot_info::$content or one of the decendant
-	 *			 indexes as specified by the number of parameters
-	 *			 passed.
-	 *
-	 * [ @param string numeric primary index
-	 *  [ @param string numeric secondary index
-	 *   [ @param string numeric tertiary index
-	 *    [ @param string numeric quaternary index
-	 *     [ @param string numeric quinary index
-	 *      [ @param string numeric senary index
-	 * ]]]]]]
-	 * @return mixed 
-	 */
-	public function get_info() {
-		$output = $this->content;
-		$num_args = func_num_args();
-		if( $num_args > 0 ) {
-			$indexes = func_get_args();
-			for( $a = 0 ; $a < $num_args ; $a += 1 ) {
-				$key = $this->{$this->case_func}($indexes[$a]);
-				if( ( is_string($key) || is_numeric($key) ) && isset($output[$key]) ) {
-					$output = $output[$key];
-				} else {
-					$invalid = $this->key_is_invalid($key,$output,$a,$indexes);
-					if($this->throw_error) {
-						throw new exception($invalid);
-					} else {
-						$this->last_error = $invalid;
-					}
-				}
-			}
-		}
-		return $output;
-	}
-
-
-	/**
 	 * @function info_exists() tests whether a given property is set.
 	 *
 	 * NOTE: dot_info::info_exists() never throws an error regardless
@@ -340,46 +290,60 @@ class dot_info
 	 *     [ @param string numeric quinary index
 	 *      [ @param string numeric senary index
 	 * ]]]]]]
-	 * @return boolean 
+	 * @return boolean
 	 */
 	public function info_exists() {
+		$num_args = func_num_args();
+		if( $num_args === 0 ) {
+			return false;
+		}
+
+		$output = $this->content;
+		$indexes = func_get_args();
+		for( $a = 0 ; $a < $num_args ; $a += 1 ) {
+			$key = $this->auto_settype($indexes[$a],true);
+			$this->last_error = $this->key_is_invalid($key,$output,$a,$indexes);
+			if( $this->last_error === '' ) {
+				$output = $output[$key];
+			} else {
+				return false;
+			}
+		}
+		return true;
+	}
+
+
+	/**
+	 * @function get_info() returns either everything stored in
+	 *			 dot_info::$content or one of the decendant
+	 *			 indexes as specified by the number of parameters
+	 *			 passed.
+	 *
+	 * [ @param string numeric primary index
+	 *  [ @param string numeric secondary index
+	 *   [ @param string numeric tertiary index
+	 *    [ @param string numeric quaternary index
+	 *     [ @param string numeric quinary index
+	 *      [ @param string numeric senary index
+	 * ]]]]]]
+	 * @return mixed
+	 */
+	public function get_info() {
 		$output = $this->content;
 		$num_args = func_num_args();
 		if( $num_args > 0 ) {
 			$indexes = func_get_args();
 			for( $a = 0 ; $a < $num_args ; $a += 1 ) {
-				$key = $this->{$this->case_func}($indexes[$a]);
-				if( ( is_string($key) || is_numeric($key) ) && isset($output[$key]) ) {
+				$key = $this->auto_settype($indexes[$a],true);
+				$this->last_error = $this->key_is_invalid($key,$output,$a,$indexes);
+				if( $this->last_error === '' ) {
 					$output = $output[$key];
-				} else {
-					return false;
+				} elseif($this->throw_error) {
+					throw new exception($this->last_error);
 				}
 			}
 		}
-		return true;
-	}
-	
-	/**
-	 * @function get_last_error() returns the last error message
-	 *			 generated by the most recent
-	 *			 dot_info::get_info() request for an invalid
-	 *			 property.
-	 * @return string the last error message (if any)
-	 */
-	public function get_last_error() {
-		$output = $this->last_error;
-		$this->last_error = '';
 		return $output;
-	}
-
-
-	/**
-	 * @function get_info_count() returns the number of info
-	 * 			 key/value pairs in object
-	 * @return integer number of info key/value pairs in object
-	 */
-	public function get_info_count() {
-		return count($this->content);
 	}
 
 
@@ -400,6 +364,55 @@ class dot_info
 		return $this->{$this->add_func}(func_get_args());
 	}
 
+
+	/**
+	 * @function get_info_count() returns the number of info
+	 * 			 key/value pairs in object
+	 *
+	 * @param boolean [$recursive = true] whether or not to recursively
+	 *			count all items within multi dimensional arrays
+	 * @return integer number of info key/value pairs in object
+	 */
+	public function get_info_count( $recursive = true ) {
+		if( $recursive !== false ) {
+			return count($this->content,COUNT_RECURSIVE);
+		} else {
+			return count($this->content);
+		}
+	}
+
+	/**
+	 * @function get_last_error() returns the last error message
+	 *			 generated by the most recent
+	 *			 dot_info::get_info() request for an invalid
+	 *			 property.
+	 * @return string the last error message (if any)
+	 */
+	public function get_last_error() {
+		$output = $this->last_error;
+		$this->last_error = '';
+		return $output;
+	}
+
+	/**
+	 * @function set_store_errors() sets the dot_info::$throw_errors
+	 *			 to FALSE.
+	 *			 i.e.   it stops dot_info throwing exceptions when
+	 *					errors are encountered
+	 */
+//	public function set_store_errors() {
+//		$this->throw_errors = false;
+//	}
+
+	/**
+	 * @function set_throw_errors() sets the dot_info::$throw_errors
+	 *			 to TRUE.
+	 *			 i.e.   when dot_info encounters an error, it throws
+	 *					an exception and halts.
+	 */
+//	public function set_throw_errors() {
+//		$this->throw_errors = true;
+//	}
 
 // END: public methods
 // ========================================================
@@ -422,11 +435,11 @@ class dot_info
 	
 	/**
 	 * @function add_new() is the workhorse when dot_info is in
-	 *			 "add new only" or "overwrite" mode.
+	 *			 "add new only" or "READ_INSERT_UPDATE" mode.
 	 *			 In "add new only mode", it adds supplied items if
 	 *			 they their indexes don't conflict with existing
 	 *			 items.
-	 *			 In "overwrite" mode, it adds supplied items
+	 *			 In "READ_INSERT_UPDATE" mode, it adds supplied items
 	 *			 regardless of whether their indexes conflict with
 	 *			 existing items.
 	 * @param	array $input a list of values supplied to the parent
@@ -434,30 +447,28 @@ class dot_info
 	 * @return	boolean always false;
 	 */
 	protected function add_new( $input ) {
-		$this->last_error = '';
 		$this->updated = false;
 
 		$value = array_shift($input);
 		if( !is_string($value) && !is_numeric($value) && !is_bool($value) ) {
-			$this->last_error = 'dot_info::add_info() expects first parameter to be a string, numeric or boolean. '.gettype($value).' given.';
+			$this->last_error = 'dot_info::add_info() expects first parameter to be a scalar value. '.gettype($value).' given.';
 			return false;
 		}
 		$value_ = $value = $this->auto_settype($value);
-		$key0 = array_shift($input);
-		$invalid = $this->key_is_invalid( $key0 , $value , 0 , array($key0) , false );
+		$key0 = $this->auto_settype( array_shift($input) , true );
+		$this->last_error = $this->key_is_invalid( $key0 , $value , 0 , array($key0) , false );
 	
-		if( $invalid === '' ) {
+		if( $this->last_error === '' ) {
 			$num_args = count($input);
 
 			if( $num_args > 0 )
 			{
 				for( $a = $num_args - 1 ; $a >= 0 ; $a -= 1 ) {
-					$invalid = $this->key_is_invalid( $input[$a] , $value , $a , $input , false );
-					if( $invalid === '' ) {
-						$input[$a] = $key = $this->{$this->case_func}($this->auto_settype($input[$a]));
+					$input[$a] = $key = $this->auto_settype($input[$a],true);
+					$this->last_error = $this->key_is_invalid( $key , $value , $a , $input , false );
+					if( $this->last_error === '' ) {
 						$value = array( $key => $value );
 					} else {
-						$this->last_error = $invalid;
 						return false;
 					}
 				}
@@ -469,7 +480,6 @@ class dot_info
 				$this->updated = true;
 			}
 		} else {
-			$this->last_error = $invalid;
 			return false;
 		}
 
@@ -487,7 +497,7 @@ class dot_info
 		if( $this->updated ) {
 			ksort($this->content);
 		} elseif( substr($this->last_error,0,8) === '[EXISTS]' ) {
-			$key = $this->auto_settype(substr($this->last_error,8));
+			$key = $this->auto_settype(substr($this->last_error,8),true);
 			$op = '$';
 			$cl = '';
 			$this->last_error = '';
@@ -499,7 +509,7 @@ class dot_info
 					break;
 				}
 			}
-			$this->last_error .= ' was already defined. Could not overwrite it with '.gettype($value).' "'.$value.'"';
+			$this->last_error .= ' was already defined. Could not READ_INSERT_UPDATE it with '.gettype($value).' "'.$value.'"';
 		}
 	}
 
@@ -575,35 +585,38 @@ class dot_info
 	 *			 (and possibly reset)
 	 * @return mixed the most appropriate type the input could be. 
 	 */
-	protected function auto_settype( $input , $wrapper = '' ) {
-		$input = trim($input);
-
-		$tmp = strtolower($input);
-
-		if( $tmp === 'true' ) {
-			$input = true;
-		}
-		elseif( $tmp === 'false' ) {
-			$input = false;
-		}
-		elseif( $tmp === 'null' ) {
-			$input = null;
-		}
-		elseif( is_numeric($input) ) {
+	protected function auto_settype( $input , $key = false , $wrapper = '' ) {
+		if( is_numeric($input) ) {
 			if( is_float( $input / 1 ) ) {
 				settype($input,'float');
-			} elseif( substr($input,0,1) !== '0' && substr($input,0,2) !== '-0' ) {
+			}
+			elseif( substr($input,0,1) !== '0' && substr($input,0,2) !== '-0' ) {
 				settype($input,'integer');
 			}
-		}
-		else
-		{
-			if( is_string($wrapper) ) {
-				$wrapper = trim($wrapper);
-				if( $wrapper === '' ) {
-					$wrapper = ';';
+		} elseif( is_string($input) ) {
+
+			$input = trim($input);
+			$tmp = strtolower($input);
+
+			if( $tmp === 'true' ) {
+				$input = true;
+			}
+			elseif( $tmp === 'false' ) {
+				$input = false;
+			}
+			elseif( $tmp === 'null' ) {
+				$input = null;
+			} else {
+				if( is_string($wrapper) ) {
+					$wrapper = trim($wrapper);
+					if( $wrapper === '' ) {
+						$wrapper = ';';
+					}
+					$input = str_replace( '\\'.$wrapper , $wrapper , $input );
 				}
-				$input = str_replace( '\\'.$wrapper , $wrapper , $input );
+				if( $key === true ) {
+					$input = $this->{$this->case_func}($input);
+				}
 			}
 		}
 		return $input;
